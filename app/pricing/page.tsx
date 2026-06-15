@@ -63,7 +63,7 @@ const plans = [
   },
   {
     name: "Educator Pack",
-    price: "$39.99",
+    price: "$29.99",
     period: "/month",
     description: "Classroom-ready tools for building critical thinking at scale.",
     features: [
