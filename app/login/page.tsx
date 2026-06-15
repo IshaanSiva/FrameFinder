@@ -3,19 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Scan, ArrowRight } from "lucide-react";
+import { Scan, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase-browser";
-import type { Metadata } from "next";
-
-// Note: metadata export doesn't work in "use client" — set it in a layout if needed.
-// export const metadata: Metadata = { title: "Sign In — FrameFinder" };
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail]       = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError]       = useState<string | null>(null);
-  const [loading, setLoading]   = useState(false);
+  const [email, setEmail]           = useState("");
+  const [password, setPassword]     = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const [loading, setLoading]       = useState(false);
 
   // Show a friendly message if redirected here after a failed auth callback.
   const urlError =
@@ -32,7 +29,19 @@ export default function LoginPage() {
     const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
-      setError(authError.message);
+      // Map Supabase's internal error messages to user-friendly copy.
+      // showPassword state is intentionally NOT reset here.
+      const msg = authError.message.toLowerCase();
+      if (
+        msg.includes("invalid login") ||
+        msg.includes("invalid credentials") ||
+        msg.includes("email not confirmed") ||
+        msg.includes("wrong password")
+      ) {
+        setError("Invalid email or password. Please try again.");
+      } else {
+        setError(authError.message);
+      }
       setLoading(false);
     } else {
       router.push("/analyzer");
@@ -104,24 +113,50 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="mb-1.5 block text-[11.5px] font-bold uppercase tracking-wider"
-                style={{ color: "#7a8e7c" }}
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                placeholder="••••••••"
-                className="w-full rounded-xl border px-4 py-2.5 text-[14px] outline-none transition-all placeholder:text-[#c4bfb8] focus:ring-2 focus:ring-emerald-400/40"
-                style={{ backgroundColor: "#f4f0e6", borderColor: "#d4cfc5", color: "#1c2018" }}
-              />
+              {/* Label row — password label + forgot password link */}
+              <div className="mb-1.5 flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="text-[11.5px] font-bold uppercase tracking-wider"
+                  style={{ color: "#7a8e7c" }}
+                >
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-[11.5px] font-medium text-emerald-700 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Password input with show/hide toggle */}
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  className="w-full rounded-xl border py-2.5 pl-4 pr-10 text-[14px] outline-none transition-all placeholder:text-[#c4bfb8] focus:ring-2 focus:ring-emerald-400/40"
+                  style={{ backgroundColor: "#f4f0e6", borderColor: "#d4cfc5", color: "#1c2018" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 transition-colors"
+                  style={{ color: "#a8bfaa" }}
+                  onMouseOver={(e) => (e.currentTarget.style.color = "#687070")}
+                  onMouseOut={(e) => (e.currentTarget.style.color = "#a8bfaa")}
+                >
+                  {showPassword
+                    ? <EyeOff className="h-4 w-4" />
+                    : <Eye    className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             {error && (
